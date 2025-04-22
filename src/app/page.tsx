@@ -1,103 +1,136 @@
-import Image from "next/image";
+"use client";
 
+import { BackgroundImage } from "@mantine/core";
+import { useState } from "react";
+import { useForm } from "@mantine/form";
+import {
+  TextInput,
+  PasswordInput,
+  Text,
+  Paper,
+  Group,
+  PaperProps,
+  Button,
+  Divider,
+  Checkbox,
+  Anchor,
+  Stack,
+  Container,
+  Title,
+} from "@mantine/core";
+import { IconAt, IconLock } from "@tabler/icons-react";
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [loading, setLoading] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const form = useForm({
+    initialValues: {
+      email: "",
+      password: "",
+      remember: false,
+    },
+
+    validate: {
+      email: (val) => (/^\S+@\S+$/.test(val) ? null : "Invalid email"),
+      password: (val) =>
+        val.length <= 6
+          ? "Password should include at least 6 characters"
+          : null,
+    },
+  });
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      // Replace with your actual login logic
+      console.log("Form values:", form.values);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Handle successful login (redirect, etc.)
+    } catch (error) {
+      console.error("Login failed:", error);
+      form.setErrors({
+        email: "Invalid credentials",
+        password: "Invalid credentials",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full flex justify-between">
+      <div className="w-3/5 h-screen bg-green-500">
+        <BackgroundImage
+          src={
+            "https://i.pinimg.com/736x/64/d3/b6/64d3b6c316a9843de9f7e86ee318aa06.jpg"
+          }
+          radius="sm"
+          className="w-full h-full">
+          <div className="mx-4 text-center pt-6">
+            <h2 className="text-white drop-shadow-lg font-bold text-2xl bg-gray-700 py-2">
+              School Inventory Managment System
+            </h2>
+          </div>
+        </BackgroundImage>
+      </div>
+      <div className="w-2/5 flex items-center">
+        <div className="w-full">
+          <Container size={460} my={40}>
+            <Title ta="center" mb={12}>
+              Welcome back!
+            </Title>
+            <Text color="dimmed" ta={"center"} size="sm" mt={5} mb={24}>
+              Do not have an account yet?{" "}
+              <Anchor<"a">
+                href="#"
+                size="sm"
+                onClick={(event) => event.preventDefault()}>
+                Create account
+              </Anchor>
+            </Text>
+
+            <form onSubmit={form.onSubmit(handleSubmit)}>
+              <Stack>
+                <TextInput
+                  required
+                  label="Email"
+                  placeholder="hello@mantine.dev"
+                  value={form.values.email}
+                  onChange={(event) =>
+                    form.setFieldValue("email", event.currentTarget.value)
+                  }
+                  error={form.errors.email}
+                />
+
+                <PasswordInput
+                  required
+                  label="Password"
+                  placeholder="Your password"
+                  value={form.values.password}
+                  onChange={(event) =>
+                    form.setFieldValue("password", event.currentTarget.value)
+                  }
+                  error={form.errors.password}
+                />
+
+                <Group>
+                  <Anchor<"a">
+                    onClick={(event) => event.preventDefault()}
+                    href="#"
+                    size="sm">
+                    Forgot password?
+                  </Anchor>
+                </Group>
+              </Stack>
+
+              <Group mt="xl">
+                <Button type="submit" loading={loading} fullWidth>
+                  Login
+                </Button>
+              </Group>
+            </form>
+          </Container>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
