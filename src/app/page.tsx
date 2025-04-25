@@ -1,6 +1,6 @@
 "use client";
 
-import { BackgroundImage } from "@mantine/core";
+import { BackgroundImage, Checkbox } from "@mantine/core";
 import { useState } from "react";
 import { useForm } from "@mantine/form";
 import {
@@ -9,18 +9,22 @@ import {
   Text,
   Paper,
   Group,
-  PaperProps,
   Button,
-  Divider,
-  Checkbox,
   Anchor,
   Stack,
   Container,
   Title,
 } from "@mantine/core";
 import { IconAt, IconLock } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
+import { showNotification } from "@mantine/notifications";
+import { IconCheck, IconX } from "@tabler/icons-react";
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+
 export default function Home() {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const form = useForm({
     initialValues: {
@@ -32,25 +36,38 @@ export default function Home() {
     validate: {
       email: (val) => (/^\S+@\S+$/.test(val) ? null : "Invalid email"),
       password: (val) =>
-        val.length <= 6
-          ? "Password should include at least 6 characters"
+        val.length <= 3
+          ? "Password should include at least 4 characters"
           : null,
     },
   });
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (values: typeof form.values) => {
     setLoading(true);
     try {
-      // Replace with your actual login logic
-      console.log("Form values:", form.values);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Handle successful login (redirect, etc.)
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/user/login/",
+        {
+          username: values.email,
+          password: values.password,
+        }
+      );
+
+      console.log(response, "lol");
+
+      if (response.status === 200) {
+        toast.success("Login successful");
+        return router.push("/inventory");
+      } else {
+        toast.error("Invalid Credential");
+      }
     } catch (error) {
-      console.error("Login failed:", error);
-      form.setErrors({
-        email: "Invalid credentials",
-        password: "Invalid credentials",
-      });
+      toast.error("Login Failed, Try again");
+
+      // form.setErrors({
+      //   email: "Invalid credentials",
+      //   password: "Invalid credentials",
+      // });
     } finally {
       setLoading(false);
     }
@@ -67,26 +84,18 @@ export default function Home() {
           className="w-full h-full">
           <div className="mx-4 text-center pt-6">
             <h2 className="text-white drop-shadow-lg font-bold text-2xl bg-gray-700 py-2">
-              School Inventory Managment System
+              School Inventory Management System
             </h2>
           </div>
         </BackgroundImage>
       </div>
       <div className="w-2/5 flex items-center">
+        <ToastContainer />
         <div className="w-full">
           <Container size={460} my={40}>
             <Title ta="center" mb={12}>
               Welcome back!
             </Title>
-            <Text color="dimmed" ta={"center"} size="sm" mt={5} mb={24}>
-              Do not have an account yet?{" "}
-              <Anchor<"a">
-                href="#"
-                size="sm"
-                onClick={(event) => event.preventDefault()}>
-                Create account
-              </Anchor>
-            </Text>
 
             <form onSubmit={form.onSubmit(handleSubmit)}>
               <Stack>
@@ -99,6 +108,7 @@ export default function Home() {
                     form.setFieldValue("email", event.currentTarget.value)
                   }
                   error={form.errors.email}
+                  leftSection={<IconAt size="1rem" />}
                 />
 
                 <PasswordInput
@@ -110,16 +120,8 @@ export default function Home() {
                     form.setFieldValue("password", event.currentTarget.value)
                   }
                   error={form.errors.password}
+                  leftSection={<IconLock size="1rem" />}
                 />
-
-                <Group>
-                  <Anchor<"a">
-                    onClick={(event) => event.preventDefault()}
-                    href="#"
-                    size="sm">
-                    Forgot password?
-                  </Anchor>
-                </Group>
               </Stack>
 
               <Group mt="xl">

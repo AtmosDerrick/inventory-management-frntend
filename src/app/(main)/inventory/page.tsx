@@ -102,7 +102,10 @@ const SearchPage: React.FC<SearchInputProps> = ({ onSearch, ...props }) => {
         </div>
 
         <div className="w-3/4 mx-auto mt-8">
-          <TableComponent selectedCategory={cateogry} />
+          <TableComponent
+            selectedCategory={cateogry}
+            searchQuery={searchQuery}
+          />
         </div>
       </Box>
       <Modal opened={opened} onClose={close} title="Add Inventory" centered>

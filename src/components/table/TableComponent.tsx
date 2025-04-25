@@ -10,32 +10,16 @@ import {
   Select,
   Modal,
   Button,
-  TextInput,
-  NumberInput,
   Loader,
 } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
-import {
-  IconEaseOut,
-  IconEdit,
-  IconEye,
-  IconFreeRights,
-  IconLogout,
-  IconOutlet,
-  IconRowRemove,
-  IconSend,
-  IconSignRight,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconEdit, IconTrash, IconLogout } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import axios from "axios";
-import EditInventoryForm from "../EditInventory";
 import { toast } from "react-toastify";
-import ReleaseForm from "../ReleaseForm";
+import EditInventoryForm from "../EditInventory";
 import InventoryReleaseForm from "../ReleaseForm";
 
-// Define types
 interface InventoryItem {
   id: string;
   inventory_name: string;
@@ -60,10 +44,14 @@ const categoryOptions: CategoryOption[] = [
 ];
 
 interface Props {
-  selectedCategory?: any;
+  selectedCategory?: CategoryOption | null;
+  searchQuery: string;
 }
 
-export default function InventoryTable({ selectedCategory }: Props) {
+export default function InventoryTable({
+  selectedCategory,
+  searchQuery,
+}: Props) {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>(
     []
@@ -80,37 +68,17 @@ export default function InventoryTable({ selectedCategory }: Props) {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [modalType, setModalType] = useState("");
 
-  // Edit form state
-  const [editForm, setEditForm] = useState({
-    name: "",
-    category: "",
-    quantity: 0,
-    entryDate: "",
-    expiringDate: "",
-  });
-
   useEffect(() => {
     fetchInventory();
   }, []);
 
   useEffect(() => {
-    // Filter inventory when category changes
-    if (selectedCategory) {
-      console.log(selectedCategory, "qq");
-      setFilteredInventory(
-        inventory.filter((item) => item.category === selectedCategory.value)
-      );
-    } else {
-      setFilteredInventory(inventory);
-    }
-    console.log(filteredInventory, "llo");
-    setCurrentPage(1); // Reset to first page when filtering
-  }, [selectedCategory, inventory]);
+    filterInventory();
+  }, [inventory, selectedCategory, searchQuery]);
 
   const fetchInventory = async () => {
     setIsLoading(true);
     try {
-      // Replace with your actual API call
       const response = await axios.get(
         "http://127.0.0.1:8000/api/inventory/getall/"
       );
@@ -119,9 +87,37 @@ export default function InventoryTable({ selectedCategory }: Props) {
     } catch (err) {
       setError(true);
       console.error("Error fetching inventory:", err);
+      toast.error("Failed to load inventory data");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const filterInventory = () => {
+    let filtered = [...inventory];
+
+    // Apply category filter if selected
+    if (selectedCategory) {
+      filtered = filtered.filter(
+        (item) => item.category === selectedCategory.value
+      );
+    }
+
+    // Apply search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.inventory_name.toLowerCase().includes(query) ||
+          item.category.toLowerCase().includes(query) ||
+          item.entry_date.toLowerCase().includes(query) ||
+          (item.expiring_date &&
+            item.expiring_date.toLowerCase().includes(query))
+      );
+    }
+
+    setFilteredInventory(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
   const getCategoryLabel = (value: string) => {
@@ -131,13 +127,6 @@ export default function InventoryTable({ selectedCategory }: Props) {
   const handleEdit = (item: InventoryItem) => {
     setModalType("edit");
     setSelectedItem(item);
-    setEditForm({
-      name: item.inventory_name,
-      category: item.category,
-      quantity: item.quantity,
-      entryDate: item.entry_date,
-      expiringDate: item.expiring_date || "",
-    });
     openEdit();
   };
 
@@ -148,28 +137,19 @@ export default function InventoryTable({ selectedCategory }: Props) {
 
   const confirmDelete = async () => {
     try {
-      setIsLoading(true); // Show loading state
-
-      // Make DELETE request to the API endpoint
+      setIsLoading(true);
       await axios.delete(
         `http://127.0.0.1:8000/api/inventory/${selectedItem?.id}/delete/`
       );
 
-      // Update local state if API call succeeds
-      const updatedInventory = inventory.filter(
-        (item) => item.id !== selectedItem?.id
-      );
-      setInventory(updatedInventory);
-
-      // Show success notification
+      setInventory(inventory.filter((item) => item.id !== selectedItem?.id));
       toast.success("Item deleted successfully");
       closeDelete();
     } catch (err) {
       console.error("Error deleting item:", err);
-      // Show error notification
       toast.error("Failed to delete item. Please try again.");
     } finally {
-      setIsLoading(false); // Hide loading state
+      setIsLoading(false);
     }
   };
 
@@ -181,8 +161,18 @@ export default function InventoryTable({ selectedCategory }: Props) {
     currentPage * itemsPerPageNum
   );
 
-  if (isLoading) return <Loader />;
-  if (error) return <Text color="red">Error loading inventory data</Text>;
+  if (isLoading)
+    return (
+      <div className="flex justify-center p-8">
+        <Loader />
+      </div>
+    );
+  if (error)
+    return (
+      <Text color="red" className="p-4">
+        Error loading inventory data
+      </Text>
+    );
 
   return (
     <div>
@@ -198,54 +188,67 @@ export default function InventoryTable({ selectedCategory }: Props) {
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {paginatedData.map((item) => (
-            <Table.Tr key={item.id}>
-              <Table.Td>{item.inventory_name}</Table.Td>
-              <Table.Td>{getCategoryLabel(item.category)}</Table.Td>
-              <Table.Td>{item.quantity}</Table.Td>
-              <Table.Td>{item.entry_date?.split("T")[0]}</Table.Td>
-              <Table.Td>{item.expiring_date || "N/A"}</Table.Td>
-              <Table.Td>
-                <Group gap="xs">
-                  <ActionIcon
-                    variant="subtle"
-                    onClick={() => {
-                      setModalType("release");
-                      setSelectedItem(item);
-
-                      openEdit();
-                    }}>
-                    <IconLogout size={16} color="green" />
-                  </ActionIcon>
-                  <ActionIcon variant="subtle" onClick={() => handleEdit(item)}>
-                    <IconEdit size={16} />
-                  </ActionIcon>
-                  <ActionIcon
-                    variant="subtle"
-                    color="red"
-                    onClick={() => handleDelete(item)}>
-                    <IconTrash size={16} />
-                  </ActionIcon>
-                </Group>
+          {paginatedData.length > 0 ? (
+            paginatedData.map((item) => (
+              <Table.Tr key={item.id}>
+                <Table.Td>{item.inventory_name}</Table.Td>
+                <Table.Td>{getCategoryLabel(item.category)}</Table.Td>
+                <Table.Td>{item.quantity}</Table.Td>
+                <Table.Td>{item.entry_date?.split("T")[0]}</Table.Td>
+                <Table.Td>
+                  {item.expiring_date?.split("T")[0] || "N/A"}
+                </Table.Td>
+                <Table.Td>
+                  <Group gap="xs">
+                    <ActionIcon
+                      variant="subtle"
+                      onClick={() => {
+                        setModalType("release");
+                        setSelectedItem(item);
+                        openEdit();
+                      }}>
+                      <IconLogout size={16} color="green" />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="subtle"
+                      onClick={() => handleEdit(item)}>
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      onClick={() => handleDelete(item)}>
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            ))
+          ) : (
+            <Table.Tr>
+              <Table.Td colSpan={6} className="text-center py-4">
+                No inventory items found
               </Table.Td>
             </Table.Tr>
-          ))}
+          )}
         </Table.Tbody>
       </Table>
 
-      <Flex justify="space-between" mt="md">
-        <Select
-          value={itemsPerPage}
-          onChange={setItemsPerPage}
-          data={["5", "10", "20"]}
-          style={{ width: 100 }}
-        />
-        <Pagination
-          value={currentPage}
-          onChange={setCurrentPage}
-          total={totalPages}
-        />
-      </Flex>
+      {filteredInventory.length > 0 && (
+        <Flex justify="space-between" mt="md">
+          <Select
+            value={itemsPerPage}
+            onChange={setItemsPerPage}
+            data={["5", "10", "20"]}
+            style={{ width: 100 }}
+          />
+          <Pagination
+            value={currentPage}
+            onChange={setCurrentPage}
+            total={totalPages}
+          />
+        </Flex>
+      )}
 
       {/* Edit Modal */}
       <Modal
@@ -253,28 +256,24 @@ export default function InventoryTable({ selectedCategory }: Props) {
         onClose={closeEdit}
         title={modalType === "edit" ? "Edit Item" : "Release Inventory"}>
         {modalType === "edit" ? (
-          <EditInventoryForm id={selectedItem ? selectedItem?.id : ""} />
+          <EditInventoryForm id={selectedItem?.id || ""} />
         ) : (
-          <div>
-            <div className="mt-4">
-              <InventoryReleaseForm
-                close={closeEdit}
-                inventoryItem={
-                  selectedItem
-                    ? {
-                        id: selectedItem.id,
-                        name: selectedItem.inventory_name,
-                        currentQuantity: selectedItem.quantity,
-                      }
-                    : {
-                        id: "",
-                        name: "",
-                        currentQuantity: 0,
-                      }
-                }
-              />
-            </div>
-          </div>
+          <InventoryReleaseForm
+            close={closeEdit}
+            inventoryItem={
+              selectedItem
+                ? {
+                    id: selectedItem.id,
+                    name: selectedItem.inventory_name,
+                    currentQuantity: selectedItem.quantity,
+                  }
+                : {
+                    id: "",
+                    name: "",
+                    currentQuantity: 0,
+                  }
+            }
+          />
         )}
       </Modal>
 
@@ -287,7 +286,7 @@ export default function InventoryTable({ selectedCategory }: Props) {
           <Button variant="default" onClick={closeDelete}>
             Cancel
           </Button>
-          <Button color="red" onClick={confirmDelete}>
+          <Button color="red" onClick={confirmDelete} loading={isLoading}>
             Delete
           </Button>
         </Group>
