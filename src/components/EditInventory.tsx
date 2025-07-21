@@ -25,7 +25,7 @@ const EditInventoryForm = ({ id, onSuccess }: Props) => {
       quantity: Yup.number()
         .min(1, "Quantity must be at least 1")
         .required("Quantity is required"),
-      expiryDate: Yup.date().required("Expiry date is required"),
+      expiryDate: Yup.date(),
     }),
     onSubmit: async (values) => {
       try {
@@ -40,6 +40,10 @@ const EditInventoryForm = ({ id, onSuccess }: Props) => {
         );
 
         toast.success("Inventory successfully updated");
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+
         if (onSuccess) onSuccess(); // Call success callback if provided
       } catch (error) {
         console.error("Update error:", error);
@@ -85,7 +89,8 @@ const EditInventoryForm = ({ id, onSuccess }: Props) => {
         <div className="mb-4">
           <label
             htmlFor="name"
-            className="block text-sm font-medium text-gray-700 mb-1">
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -113,7 +118,8 @@ const EditInventoryForm = ({ id, onSuccess }: Props) => {
         <div className="mb-4">
           <label
             htmlFor="category"
-            className="block text-sm font-medium text-gray-700 mb-1">
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Category <span className="text-red-500">*</span>
           </label>
           <select
@@ -126,7 +132,8 @@ const EditInventoryForm = ({ id, onSuccess }: Props) => {
             }`}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
-            value={formik.values.category}>
+            value={formik.values.category}
+          >
             <option value="">Select a category</option>
             <option value="furniture">Furniture</option>
             <option value="books">Books & Educational Materials</option>
@@ -151,7 +158,8 @@ const EditInventoryForm = ({ id, onSuccess }: Props) => {
         <div className="mb-4">
           <label
             htmlFor="quantity"
-            className="block text-sm font-medium text-gray-700 mb-1">
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Quantity <span className="text-red-500">*</span>
           </label>
           <input
@@ -180,7 +188,8 @@ const EditInventoryForm = ({ id, onSuccess }: Props) => {
         <div className="mb-6">
           <label
             htmlFor="expiryDate"
-            className="block text-sm font-medium text-gray-700 mb-1">
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Expiry Date <span className="text-red-500">*</span>
           </label>
           <input
@@ -207,7 +216,8 @@ const EditInventoryForm = ({ id, onSuccess }: Props) => {
         <button
           type="submit"
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200"
-          disabled={!formik.isValid || formik.isSubmitting}>
+          disabled={!formik.isValid || formik.isSubmitting}
+        >
           {formik.isSubmitting ? "Saving..." : "Save Changes"}
         </button>
       </form>
